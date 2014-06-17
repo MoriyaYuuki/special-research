@@ -11,7 +11,7 @@ int	threshold(IplImage *img,IplImage *t_img);
 
 int main(int argc, char **argv)
 {
-	IplImage *image=0, *threshold_img=0;
+	IplImage *image=0,gray_img, *threshold_img=0;
 	//CvPoint *mouse=0;
 	int check=0;
 	int x=0, y=0;
@@ -51,11 +51,11 @@ int main(int argc, char **argv)
 		cvShowImage("Image", image);
 		cvSetMouseCallback("Image", Mouse/*,mouse*/);
 		cvWaitKey(0);
+		histogram(argc,argv);
 		//x = mouse->x;
 		//y = mouse->y;
 		//printf("%d,%d",x,y);
 		
-
 		//printf("%d\n", check);
 		//printf("%d,%d\n",x,y);
 		getchar();

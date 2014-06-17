@@ -7,10 +7,7 @@ int histogram(int argc, char **argv)
 {
 
 	// (1)load a source image as is
-	const char *imagename = argc > 1 ? argv[1] : "C:\outputimg.jpg";
-	Mat src_img = imread(imagename, -1);
-	if (!src_img.data)
-		return -1;
+	Mat src_img = cvLoadImage("outputimg.jpg", CV_LOAD_IMAGE_GRAYSCALE);
 
 	// (2)allocate Mat to draw a histogram image
 	const int ch_width = 260;
