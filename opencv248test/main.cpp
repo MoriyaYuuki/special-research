@@ -1,57 +1,53 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/opencv_lib.hpp>
 #include <Tchar.h>
+#include <iostream>
+#include <fstream>
+#include <string>
 
 using namespace cv;
 
 int CAM();
 int histogram(int argc, char **argv);
+int histogram2(IplImage* img);
+void get_imageData(char* out_filename, IplImage* img);
 void Mouse(int event, int x, int y, int flags, void *param);
-int	threshold(IplImage *img,IplImage *t_img);
+int	threshold(IplImage* &img,IplImage* &t_img);
 
 int main(int argc, char **argv)
 {
-	IplImage *image=0,gray_img, *threshold_img=0;
+	IplImage *image=0,*gray_image=0,*threshold_image=0;
 	//CvPoint *mouse=0;
-	int check=0;
-	int x=0, y=0;
+	char name[100];
+
 	while (1){
 		/*画像読み込み*/
 		CAM();
 		image = cvLoadImage("outputimg.jpg", CV_LOAD_IMAGE_ANYCOLOR);
+		gray_image = cvLoadImage("outputimg.jpg", CV_LOAD_IMAGE_GRAYSCALE);
 
-		/*二値化(大津)*/
-		threshold(image, threshold_img);
-
-		/*画像表示*/
-		image = cvLoadImage("outputimg.jpg", CV_LOAD_IMAGE_ANYCOLOR);
-		if (image == NULL) {
-			fprintf(stderr, "読込みに失敗しました.");
-			return EXIT_FAILURE;
-		}
-		threshold_img = cvLoadImage("Threshold_outputimg.jpg", CV_LOAD_IMAGE_ANYCOLOR);
-		
 		cvNamedWindow("Image", CV_WINDOW_AUTOSIZE);
-		cvNamedWindow("Threshold_Image", CV_WINDOW_AUTOSIZE);
 		cvShowImage("Image", image);
-		cvShowImage("Threshold_Image",threshold_img);
+		cvNamedWindow("Gray_Image", CV_WINDOW_AUTOSIZE);
+		cvShowImage("Gray_Image", gray_image);
 		cvWaitKey(0);
 		cvDestroyWindow("Image");
-		cvDestroyWindow("Threshold_Image");
 		cvReleaseImage(&image);
-		cvReleaseImage(&threshold_img);
+		cvDestroyWindow("Gray_Image");
+		cvReleaseImage(&gray_image);
 
-		/*画像表示*/
-		image = cvLoadImage("Threshold_outputimg.jpg", CV_LOAD_IMAGE_ANYCOLOR);
-		if (image == NULL) {
-			fprintf(stderr, "読込みに失敗しました.");
-			return EXIT_FAILURE;
-		}
-		cvNamedWindow("Image", CV_WINDOW_AUTOSIZE);
-		cvShowImage("Image", image);
-		cvSetMouseCallback("Image", Mouse/*,mouse*/);
+		/*ヒストグラムの表示*/
+		//histogram2(gray_image);
+
+		/*二値化*/
+		threshold(gray_image, threshold_image);
+
+		cvNamedWindow("Threshold_Image", CV_WINDOW_AUTOSIZE);
+		cvShowImage("Threshold_Image", threshold_image);
 		cvWaitKey(0);
-		histogram(argc,argv);
+		cvDestroyWindow("Threshold_Image");
+		cvReleaseImage(&threshold_image);
+
 		//x = mouse->x;
 		//y = mouse->y;
 		//printf("%d,%d",x,y);
@@ -62,3 +58,7 @@ int main(int argc, char **argv)
 	}
 	return 0;
 }
+
+//std::cout << "outfile name(.txt) = ";
+//std::cin >> name;
+//get_imageData(name, gray_image);

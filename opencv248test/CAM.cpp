@@ -3,8 +3,6 @@
 
 using namespace cv;
 
-int	threshold(IplImage *img, IplImage *t_img);
-
 int CAM()
 {
 	const double WIDTH = 640;  // 幅
@@ -12,7 +10,7 @@ int CAM()
 	const int CAMERANUM = 0; // カメラ番号
 
 	CvCapture *capture = NULL;
-	IplImage *frame = 0,*t_frame=0;
+	IplImage *frame = 0;
 	int ch;
 
 	// カメラ接続、幅と高さの設定
@@ -21,13 +19,11 @@ int CAM()
 	cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_HEIGHT, HEIGHT);
 
 	namedWindow("Capture", CV_WINDOW_AUTOSIZE | CV_WINDOW_FREERATIO);
-	namedWindow("Gray_Capture", CV_WINDOW_AUTOSIZE | CV_WINDOW_FREERATIO);
 
 	while (1) {
 		frame = cvQueryFrame(capture);
-		threshold(frame,t_frame);
+
 		cvShowImage("Capture", frame);
-		cvShowImage("Gray_Capture", t_frame);
 		ch = cvWaitKey(1); // 0 はディレイ時間 (ミリ秒単位)
 		if (ch == 's'){
 			cvSaveImage("outputimg.jpg", frame);
@@ -40,6 +36,5 @@ int CAM()
 
 	cvReleaseCapture(&capture);
 	cvDestroyWindow("Capture");
-	cvDestroyWindow("Gray_Capture");
 	return 0;
 }

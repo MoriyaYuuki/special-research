@@ -69,11 +69,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="CAMtest.cpp" />
-    <ClCompile Include="histogramtest.cpp" />
+    <ClCompile Include="CAM.cpp" />
+    <ClCompile Include="DestroyView.cpp" />
+    <ClCompile Include="get_imageData.cpp" />
+    <ClCompile Include="histogram.cpp" />
+    <ClCompile Include="histogram2.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mouse.cpp" />
     <ClCompile Include="Threshold.cpp" />
+    <ClCompile Include="view.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
