@@ -12,11 +12,12 @@ int histogram(int argc, char **argv);
 int histogram2(IplImage* img);
 void get_imageData(char* out_filename, IplImage* img);
 void Mouse(int event, int x, int y, int flags, void *param);
-int	threshold(IplImage* &img,IplImage* &t_img);
+void threshold(IplImage* img,IplImage* t_img);
+void cutImage(IplImage* img, IplImage* cut_img);
 
 int main(int argc, char **argv)
 {
-	IplImage *image=0,*gray_image=0,*threshold_image=0;
+	IplImage *image,*gray_image,*threshold_image;
 	//CvPoint *mouse=0;
 	char name[100];
 
@@ -24,23 +25,30 @@ int main(int argc, char **argv)
 		/*画像読み込み*/
 		CAM();
 		image = cvLoadImage("outputimg.jpg", CV_LOAD_IMAGE_ANYCOLOR);
+		threshold_image = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 1);
+		gray_image = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 1);
+
 		gray_image = cvLoadImage("outputimg.jpg", CV_LOAD_IMAGE_GRAYSCALE);
 
 		cvNamedWindow("Image", CV_WINDOW_AUTOSIZE);
 		cvShowImage("Image", image);
 		cvNamedWindow("Gray_Image", CV_WINDOW_AUTOSIZE);
 		cvShowImage("Gray_Image", gray_image);
+		cvSaveImage("Gray_outputimg.jpg", gray_image);
 		cvWaitKey(0);
 		cvDestroyWindow("Image");
-		cvReleaseImage(&image);
+		//cvReleaseImage(&image);
 		cvDestroyWindow("Gray_Image");
-		cvReleaseImage(&gray_image);
+		//cvReleaseImage(&gray_image);
+		
 
 		/*ヒストグラムの表示*/
 		//histogram2(gray_image);
 
 		/*二値化*/
 		threshold(gray_image, threshold_image);
+		// 輝度平均
+		//cvThreshold(gray_image, threshold_image, 50, 255, CV_THRESH_BINARY);
 
 		cvNamedWindow("Threshold_Image", CV_WINDOW_AUTOSIZE);
 		cvShowImage("Threshold_Image", threshold_image);
