@@ -70,6 +70,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CAM.cpp" />
+    <ClCompile Include="cutImage.cpp" />
     <ClCompile Include="DestroyView.cpp" />
     <ClCompile Include="get_imageData.cpp" />
     <ClCompile Include="histogram.cpp" />
