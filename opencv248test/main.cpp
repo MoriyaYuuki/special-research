@@ -4,68 +4,249 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <time.h>
+#include <direct.h>
 
 using namespace cv;
 
-int CAM();
+void CAM(char* filename);
 int histogram(int argc, char **argv);
 int histogram2(IplImage* img);
-void get_imageData(char* out_filename, IplImage* img);
+void get_imageData(char* filename, IplImage* img);
 void Mouse(int event, int x, int y, int flags, void *param);
-void threshold(IplImage* img,IplImage* t_img);
+void threshold(IplImage* img, IplImage* t_img, char* filename);
 void cutImage(IplImage* img, IplImage* cut_img);
+void makeDirectory(const char* dirName);
+
+typedef struct _data{
+	int event, x=0, y=0, flag;
+}Data;
+
+/*時間の取得*/
+time_t now = time(NULL);
+struct tm *pnow = localtime(&now);
 
 int main(int argc, char **argv)
 {
-	IplImage *image,*gray_image,*threshold_image;
-	//CvPoint *mouse=0;
-	char name[100];
+	IplImage *image,*gray_image,*threshold_image,*point_image;
+	Data data;
+	const char *directoryName;
+	char fileName[100], gray_fileName[100], threshold_fileName[100], point_fileName[100];
+	CvRect roi;
 
 	while (1){
+		/*ディレクトリの作成*/
+		directoryName = "Image";
+		makeDirectory(directoryName);
+
 		/*画像読み込み*/
-		CAM();
-		image = cvLoadImage("outputimg.jpg", CV_LOAD_IMAGE_ANYCOLOR);
-		threshold_image = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 1);
-		gray_image = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 1);
+		sprintf(fileName, "Outimage_%d%02d%02d%02d%02d.jpg",
+			pnow->tm_year + 1900, pnow->tm_mon + 1, pnow->tm_mday, pnow->tm_hour, pnow->tm_min);
+		printf("%s\n", fileName);
+		CAM(fileName);
 
-		gray_image = cvLoadImage("outputimg.jpg", CV_LOAD_IMAGE_GRAYSCALE);
-
+		/*画像表示*/
+		image = cvLoadImage(fileName, CV_LOAD_IMAGE_ANYCOLOR);
 		cvNamedWindow("Image", CV_WINDOW_AUTOSIZE);
 		cvShowImage("Image", image);
-		cvNamedWindow("Gray_Image", CV_WINDOW_AUTOSIZE);
-		cvShowImage("Gray_Image", gray_image);
-		cvSaveImage("Gray_outputimg.jpg", gray_image);
 		cvWaitKey(0);
 		cvDestroyWindow("Image");
-		//cvReleaseImage(&image);
-		cvDestroyWindow("Gray_Image");
-		//cvReleaseImage(&gray_image);
+
+		/*グレースケールの画像作成，表示，保存*/
+		gray_image = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 1);
+		gray_image = cvLoadImage(fileName, CV_LOAD_IMAGE_GRAYSCALE);
+		cvNamedWindow("Gray_Image", CV_WINDOW_AUTOSIZE);
+		cvShowImage("Gray_Image", gray_image);
+		sprintf(gray_fileName, "Gray_%s", fileName);
+		printf("%s\n", gray_fileName);
+		cvSaveImage(gray_fileName, gray_image);
+
+		/*輝度の取得（グレースケール）*/
+		directoryName = "ImageData";
+		makeDirectory(directoryName);
+		get_imageData(fileName,gray_image);
+		histogram2(gray_image);
+
+		///*二値化*/
+		directoryName = "Thresholde";
+		makeDirectory(directoryName);
+		sprintf(threshold_fileName, "Thresholde_%s", fileName);
+		printf("%s\n", threshold_fileName);
+		threshold_image = cvCreateImage(cvGetSize(gray_image), IPL_DEPTH_8U, 1);
+		threshold(gray_image, threshold_image, fileName);
+		/*cvNamedWindow("Threshold_Image", CV_WINDOW_AUTOSIZE);
+		cvShowImage("Threshold_Image", threshold_image);*/
 		
-
-		/*ヒストグラムの表示*/
-		//histogram2(gray_image);
-
-		/*二値化*/
-		threshold(gray_image, threshold_image);
-		// 輝度平均
-		//cvThreshold(gray_image, threshold_image, 50, 255, CV_THRESH_BINARY);
-
-		cvNamedWindow("Threshold_Image", CV_WINDOW_AUTOSIZE);
-		cvShowImage("Threshold_Image", threshold_image);
+		/*マウス座標取得*/
+		printf("マウスで座標入力\n");
+		cvSetMouseCallback("Gray_Image", Mouse,(void*)&data);
+		printf("%d:%d\n", data.x, data.y);
 		cvWaitKey(0);
-		cvDestroyWindow("Threshold_Image");
-		cvReleaseImage(&threshold_image);
 
-		//x = mouse->x;
-		//y = mouse->y;
-		//printf("%d,%d",x,y);
-		
-		//printf("%d\n", check);
-		//printf("%d,%d\n",x,y);
+		///*切り出し処理*/
+		directoryName = "PointImage";
+		makeDirectory(directoryName);
+		cvSetImageROI(gray_image, cvRect(data.x-150,data.y-150,300,300));
+		point_image = cvCreateImage(cvGetSize(gray_image), IPL_DEPTH_8U, 1);
+		printf("%d:%d", point_image->height, point_image->width);
+		cvCopy(gray_image,point_image);
+		cvResetImageROI(gray_image);
+		cvNamedWindow("Point_Image", CV_WINDOW_AUTOSIZE);
+		cvShowImage("Point_Image", point_image);
+		cvWaitKey(0);
+		sprintf(point_fileName, "Point_Outimage_%d%02d%02d%02d%02d.jpg",
+			pnow->tm_year + 1900, pnow->tm_mon + 1, pnow->tm_mday, pnow->tm_hour, pnow->tm_min);
+		cvSaveImage(point_fileName, point_image);
+
+		/*輝度の取得（切り出し後）*/
+		directoryName = "PointImageData";
+		makeDirectory(directoryName);
+		get_imageData(point_fileName, point_image);
+		histogram2(point_image);
+
+		/*切り出し二値化*/
+		directoryName = "ThresholdPointImage";
+		makeDirectory(directoryName);
+		threshold_image = cvCreateImage(cvGetSize(point_image), IPL_DEPTH_8U, 1);
+		threshold(point_image, threshold_image, point_fileName);
+
+		//cvDestroyWindow("Image");
+		//cvReleaseImage(&image);
+		//cvDestroyWindow("Gray_Image");
+		//cvReleaseImage(&gray_image);
+
+		///*データ出力*/
+		//sprintf(exfileName, "99%s", fileName);
+		//get_imageData(exfileName,gray_image);
+
+		//cvNamedWindow("Threshold_Image", CV_WINDOW_AUTOSIZE);
+		//cvShowImage("Threshold_Image", threshold_image);
+		//cvWaitKey(0);
+		//cvDestroyWindow("Threshold_Image");
+		//cvReleaseImage(&threshold_image);
+
 		getchar();
 	}
 	return 0;
 }
+
+void makeDirectory(const char *dirName)
+{
+	/*日付からディレクトリ作成*/
+	char directoryName[100];
+	sprintf(directoryName, "%s_%d%02d%02d",
+			dirName,pnow->tm_year + 1900, pnow->tm_mon + 1, pnow->tm_mday);
+	_mkdir(directoryName);
+	_chdir(directoryName);
+}
+
+void CAM(char* filename)
+{
+	const double WIDTH = 1280;//2065;//640;  // 幅
+	const double HEIGHT = 720;//1549;//480; // 高さ
+	const int CAMERANUM = 1; // カメラ番号
+	/*画像関係*/
+	CvCapture *capture = NULL;
+	IplImage *frame = 0;
+	int ch;
+
+	// カメラ接続、幅と高さの設定
+	capture = cvCreateCameraCapture(CAMERANUM);
+	cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_WIDTH, WIDTH);
+	cvSetCaptureProperty(capture, CV_CAP_PROP_FRAME_HEIGHT, HEIGHT);
+	namedWindow("Capture", CV_WINDOW_AUTOSIZE | CV_WINDOW_FREERATIO);
+	while (1) {
+		frame = cvQueryFrame(capture);
+		cvShowImage("Capture", frame);
+		ch = cvWaitKey(1); // 0 はディレイ時間 (ミリ秒単位)
+		if (ch == 's'){
+			cvSaveImage(filename, frame);
+		}
+		if (ch == '\x1b') {
+			// ESC キー
+			break;
+		}
+	}
+	cvReleaseCapture(&capture);
+	cvDestroyWindow("Capture");
+}
+
+void get_imageData(char* filename, IplImage* img)
+{
+	int x, y, i = 0;
+	char out_FileName[100];
+	sprintf(out_FileName, "Data_%s.txt", filename);
+	std::ofstream ofs(out_FileName);
+
+	uchar p[3];
+
+	uchar* bank = new uchar[img->height*img->width];
+	for (y = 0; y < img->height; y++) {
+		for (x = 0; x < img->width; x++) {
+			/* 画素値を直接操作する一例 */
+			//p[0] = img->imageData[img->widthStep * y + x * 3];        // B
+			//p[1] = img->imageData[img->widthStep * y + x * 3 + 1];    // G
+			//p[2] = img->imageData[img->widthStep * y + x * 3 + 2];    // R
+			i++;
+			//bank[i] = 0.144*p[0] + 0.587*p[1] + 0.299*p[2];
+			bank[i] = img->imageData[img->widthStep * y + x];
+			ofs << std::dec << static_cast<int>(bank[i]) << std::endl;
+		}
+	}
+}
+
+void Mouse(int event, int x, int y, int flags, void *param)
+{
+	Data* data = (Data*)param;
+	switch (event)
+	{
+		case CV_EVENT_LBUTTONDOWN:
+		{
+			std::cout << x << "," << y << "\n";
+			data->x = x;
+			data->y = y;
+			break;
+		}
+		default:
+		{
+			break;
+		}
+	}
+}
+
+void threshold(IplImage* img, IplImage* t_img, char* filename)
+{
+	IplImage *src_img = 0, *dst_img;
+	int x;
+	char exfilename[100];/*拡張子付きファイル名*/
+
+	//cvSmooth (src_img, src_img, CV_GAUSSIAN, 5);//平均化
+
+	cvThreshold(img, t_img, 100, 255, CV_THRESH_BINARY);
+	sprintf(exfilename, "100_%s", filename);
+	cvSaveImage(exfilename, t_img);
+
+	cvThreshold(img, t_img, 50, 255, CV_THRESH_BINARY);
+	sprintf(exfilename, "50%s", filename);
+	cvSaveImage(exfilename, t_img);
+
+	cvThreshold(img, t_img, 75, 255, CV_THRESH_BINARY);
+	sprintf(exfilename, "75%s", filename);
+	cvSaveImage(exfilename, t_img);
+
+	// (1)輝度平均
+	x = cvThreshold(img, t_img, 127, 255, CV_THRESH_BINARY);
+	sprintf(exfilename, "ave%d%s", x, filename);
+	cvSaveImage(exfilename, t_img);
+
+	// (2)大津の手法
+	x = cvThreshold(img, t_img, 0, 255, CV_THRESH_BINARY | CV_THRESH_OTSU);
+	sprintf(exfilename, "Otsu%d%s", x, filename);
+	cvSaveImage(exfilename, t_img);
+}
+
+
+
 
 //std::cout << "outfile name(.txt) = ";
 //std::cin >> name;

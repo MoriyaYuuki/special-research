@@ -51,8 +51,8 @@ int histogram2(IplImage* img)
 	}
 
 	// (8)ヒストグラム画像を表示，キーが押されたときに終了
-	cvNamedWindow("Image", CV_WINDOW_AUTOSIZE);
-	cvShowImage("Image", src_img);
+	//cvNamedWindow("Image", CV_WINDOW_AUTOSIZE);
+	//cvShowImage("Image", src_img);
 	cvNamedWindow("Histogram", CV_WINDOW_AUTOSIZE);
 	cvShowImage("Histogram", hist_img);
 	cvWaitKey(0);

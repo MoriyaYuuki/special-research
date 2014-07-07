@@ -76,7 +76,6 @@
     <ClCompile Include="histogram.cpp" />
     <ClCompile Include="histogram2.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="mouse.cpp" />
     <ClCompile Include="Threshold.cpp" />
     <ClCompile Include="view.cpp" />
   </ItemGroup>
