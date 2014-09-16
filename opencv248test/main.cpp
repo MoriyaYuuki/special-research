@@ -22,6 +22,11 @@ typedef struct _data{
 	int event, x=0, y=0, flag;
 }Data;
 
+typedef struct _cutdata{
+	int x = 0, y = 0, width=0, hight=0;
+}cutData;
+
+
 /*時間の取得*/
 time_t now = time(NULL);
 struct tm *pnow = localtime(&now);
@@ -30,9 +35,12 @@ int main(int argc, char **argv)
 {
 	IplImage *image,*gray_image,*threshold_image,*point_image;
 	Data data;
+	cutData cut;
 	const char *directoryName;
 	char fileName[100], gray_fileName[100], threshold_fileName[100], point_fileName[100];
 	CvRect roi;
+	double sum=0;
+	double last_sum = 0;
 
 	while (1){
 		/*ディレクトリの作成*/
@@ -64,7 +72,7 @@ int main(int argc, char **argv)
 		/*輝度の取得（グレースケール）*/
 		directoryName = "ImageData";
 		makeDirectory(directoryName);
-		get_imageData(fileName,gray_image);
+		get_imageData(fileName, gray_image);
 		histogram2(gray_image);
 
 		///*二値化*/
@@ -76,20 +84,20 @@ int main(int argc, char **argv)
 		threshold(gray_image, threshold_image, fileName);
 		/*cvNamedWindow("Threshold_Image", CV_WINDOW_AUTOSIZE);
 		cvShowImage("Threshold_Image", threshold_image);*/
-		
+
 		/*マウス座標取得*/
 		printf("マウスで座標入力\n");
-		cvSetMouseCallback("Gray_Image", Mouse,(void*)&data);
+		cvSetMouseCallback("Gray_Image", Mouse, (void*)&data);
 		printf("%d:%d\n", data.x, data.y);
 		cvWaitKey(0);
 
 		///*切り出し処理*/
 		directoryName = "PointImage";
 		makeDirectory(directoryName);
-		cvSetImageROI(gray_image, cvRect(data.x-150,data.y-150,300,300));
+		cvSetImageROI(gray_image, cvRect(data.x - 75, data.y - 75, 150, 150));
 		point_image = cvCreateImage(cvGetSize(gray_image), IPL_DEPTH_8U, 1);
-		printf("%d:%d", point_image->height, point_image->width);
-		cvCopy(gray_image,point_image);
+		printf("%d:%d\n", point_image->height, point_image->width);
+		cvCopy(gray_image, point_image);
 		cvResetImageROI(gray_image);
 		cvNamedWindow("Point_Image", CV_WINDOW_AUTOSIZE);
 		cvShowImage("Point_Image", point_image);
@@ -109,6 +117,61 @@ int main(int argc, char **argv)
 		makeDirectory(directoryName);
 		threshold_image = cvCreateImage(cvGetSize(point_image), IPL_DEPTH_8U, 1);
 		threshold(point_image, threshold_image, point_fileName);
+
+		/*単語周辺のヒストグラム*/
+		printf("マウスで座標入力\n");
+		cvSetMouseCallback("Point_Image", Mouse, (void*)&data);
+		printf("%d:%d\n", data.x, data.y);
+		for (int j = 0; j < point_image->width; j++){
+			sum += point_image->imageData[point_image->widthStep * (data.y)];
+		}
+		sum = sum / point_image->width;
+		std::cout << sum << std::endl;
+		cvWaitKey(0);
+		printf("%d:%d\n", data.x, data.y);
+		std::cout << "cuthis" << std::endl;
+		for (int j = 0; j < point_image->width; j++){
+			sum += point_image->imageData[point_image->widthStep * (data.y) + j];
+	    }
+		sum / point_image->width;
+		last_sum = sum;
+		sum = 0;
+		for (int i = 0; i < data.y; i++){
+			for (int j = 0; j < point_image->width; j++){
+				sum += point_image->imageData[point_image->widthStep * (data.y - i) + j];
+			}
+			sum=sum / point_image->width;
+			printf("%lf\n",sum);
+			if (abs(last_sum) - abs(sum) > 5000){
+				cut.y = data.y - i;
+				break;
+			}
+			last_sum = sum;
+			sum = 0;
+		}
+
+		for (int j = 0; j < point_image->width; j++){
+			sum += point_image->imageData[point_image->widthStep * (data.y) + j];
+		}
+		sum=sum / point_image->width;
+		last_sum = sum;
+		sum = 0;
+		for (int i = 0; i < point_image->height - data.y; i++){
+			for (int j = 0; j < point_image->width; j++){
+				sum += point_image->imageData[point_image->widthStep * (data.y + i) + j];
+			}
+			sum / point_image->width;
+			printf("aaaaaaaaaaaaaaaaaaaaaaaaa\n");
+			printf("%lf\n", sum);
+			if (abs(last_sum) - abs(sum) > 5000){
+				cut.hight = cut.y-(data.y - i);
+				break;
+			}
+			last_sum = sum;
+			sum = 0;
+		}
+
+		std::cout << cut.y << "::" << cut.hight << std::endl;
 
 		//cvDestroyWindow("Image");
 		//cvReleaseImage(&image);
@@ -142,7 +205,7 @@ void makeDirectory(const char *dirName)
 
 void CAM(char* filename)
 {
-	const double WIDTH = 1280;//2065;//640;  // 幅
+	const double WIDTH = 960;//2065;//640;  // 幅
 	const double HEIGHT = 720;//1549;//480; // 高さ
 	const int CAMERANUM = 1; // カメラ番号
 	/*画像関係*/
