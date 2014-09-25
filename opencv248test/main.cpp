@@ -1,3 +1,4 @@
+
 #include <opencv2/opencv.hpp>
 #include <opencv2/opencv_lib.hpp>
 #include <Tchar.h>
@@ -39,8 +40,10 @@ int main(int argc, char **argv)
 	const char *directoryName;
 	char fileName[100], gray_fileName[100], threshold_fileName[100], point_fileName[100];
 	CvRect roi;
-	double sum=0;
-	double last_sum = 0;
+	unsigned int sum=0;
+	double ave = 0.0;
+	double last_ave = 0.0;
+	int i=0;
 
 	while (1){
 		/*ディレクトリの作成*/
@@ -94,7 +97,7 @@ int main(int argc, char **argv)
 		///*切り出し処理*/
 		directoryName = "PointImage";
 		makeDirectory(directoryName);
-		cvSetImageROI(gray_image, cvRect(data.x - 75, data.y - 75, 150, 150));
+		cvSetImageROI(gray_image, cvRect(data.x - 50, data.y - 25, 100, 50));
 		point_image = cvCreateImage(cvGetSize(gray_image), IPL_DEPTH_8U, 1);
 		printf("%d:%d\n", point_image->height, point_image->width);
 		cvCopy(gray_image, point_image);
@@ -119,7 +122,86 @@ int main(int argc, char **argv)
 		threshold(point_image, threshold_image, point_fileName);
 
 		/*単語周辺のヒストグラム*/
-		printf("マウスで座標入力\n");
+		for (int i = 0; i < 25; i++){
+			for (int j = 0; j < point_image->width; j++){
+				sum += (uchar)point_image->imageData[point_image->widthStep * (25-i) + j];
+				//printf("%d\n", (uchar)point_image->imageData[point_image->widthStep * 25 + j]);
+			}
+			ave = sum / point_image->width;
+			if (ave > 160){
+				roi.y = 25 - i;
+				break;
+			}
+			sum = 0;
+			printf("%lf , %lf , %d\n", ave, last_ave,i);
+		}
+
+		for (int i = 0; i < 25; i++){
+			for (int j = 0; j < point_image->width; j++){
+				sum += (uchar)point_image->imageData[point_image->widthStep * (25 + i) + j];
+				//printf("%d\n", (uchar)point_image->imageData[point_image->widthStep * 25 + j]);
+			}
+			ave = sum / point_image->width;
+			if (ave > 160) {
+				roi.height = (25 + i) - roi.y;
+				break;
+			}
+			sum = 0;
+			printf("%lf , %lf , %d\n", ave, last_ave, i);
+		}
+		//printf("%d , %d\n", roi.y, roi.height);
+		//cvSetImageROI(point_image, cvRect(0, roi.y , 100, roi.height));
+		//cvSaveImage("result.bmp", point_image);
+		//cvWaitKey(0);
+		//while (ave - last_ave < 50){
+		//	last_ave = ave;
+		//	sum = 0;
+		//	for (int j = 0; j < point_image->width; j++){
+		//		sum += (uchar)point_image->imageData[point_image->widthStep * (25 + i) + j];
+		//		//printf("%d\n", (uchar)point_image->imageData[point_image->widthStep * 25 + j]);
+		//	}
+		//	ave = sum / point_image->width;
+		//	i++;
+		//}
+		//roi.height = 25 + i - roi.y;
+		//while (ave - last_ave < 50){
+		//	last_ave = ave;
+		//	sum = 0;
+		//	for (int j = 0; j < point_image->width; j++){
+		//		sum += (uchar)point_image->imageData[point_image->widthStep * (25 - i) + j];
+		//		//printf("%d\n", (uchar)point_image->imageData[point_image->widthStep * 25 + j]);
+		//	}
+		//	ave = sum / point_image->width;
+		//	i++;
+		//}
+		//roi.y = 25 - i;
+		//while (ave - last_ave < 50){
+		//	last_ave = ave;
+		//	sum = 0;
+		//	for (int j = 0; j < point_image->width; j++){
+		//		sum += (uchar)point_image->imageData[point_image->widthStep * (25 + i) + j];
+		//		//printf("%d\n", (uchar)point_image->imageData[point_image->widthStep * 25 + j]);
+		//	}
+		//	ave = sum / point_image->width;
+		//	i++;
+		//}
+		//roi.height = 25 + i - roi.y;
+
+
+
+		//for (int i = 0; i < 25; i++){
+		//	sum = 0;
+		//	for (int j = 0; j < point_image->width; j++){
+		//		sum += (uchar)point_image->imageData[point_image->widthStep * (25-i) + j];
+		//		//printf("%d\n", (uchar)point_image->imageData[point_image->widthStep * 25 + j]);
+		//	}
+		//	std::cout << "aaaaaaaaaaaaaaaa" << std::endl;
+		//	std::cout << sum << std::endl;
+		//}
+			
+		
+
+		/*printf("マウスで座標入力\n");
 		cvSetMouseCallback("Point_Image", Mouse, (void*)&data);
 		printf("%d:%d\n", data.x, data.y);
 		for (int j = 0; j < point_image->width; j++){
@@ -171,7 +253,7 @@ int main(int argc, char **argv)
 			sum = 0;
 		}
 
-		std::cout << cut.y << "::" << cut.hight << std::endl;
+		std::cout << cut.y << "::" << cut.hight << std::endl;*/
 
 		//cvDestroyWindow("Image");
 		//cvReleaseImage(&image);
@@ -205,9 +287,9 @@ void makeDirectory(const char *dirName)
 
 void CAM(char* filename)
 {
-	const double WIDTH = 960;//2065;//640;  // 幅
-	const double HEIGHT = 720;//1549;//480; // 高さ
-	const int CAMERANUM = 1; // カメラ番号
+	const double WIDTH = 640;  // 幅
+	const double HEIGHT = 480; // 高さ
+	const int CAMERANUM = 0; // カメラ番号
 	/*画像関係*/
 	CvCapture *capture = NULL;
 	IplImage *frame = 0;
