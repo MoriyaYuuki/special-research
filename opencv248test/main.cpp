@@ -18,6 +18,8 @@ void Mouse(int event, int x, int y, int flags, void *param);
 void threshold(IplImage* img, IplImage* t_img, char* filename);
 void cutImage(IplImage* img, IplImage* cut_img);
 void makeDirectory(const char* dirName);
+int search_TransAngle(IplImage* img);
+Mat TransMat(double angle);
 
 typedef struct _data{
 	int event, x=0, y=0, flag;
@@ -44,6 +46,7 @@ int main(int argc, char **argv)
 	double ave = 0.0;
 	double last_ave = 0.0;
 	int i=0;
+
 
 	while (1){
 		/*ディレクトリの作成*/
@@ -114,6 +117,8 @@ int main(int argc, char **argv)
 		makeDirectory(directoryName);
 		get_imageData(point_fileName, point_image);
 		histogram2(point_image);
+
+		search_TransAngle(point_image);
 
 		/*切り出し二値化*/
 		directoryName = "ThresholdPointImage";
@@ -289,7 +294,7 @@ void CAM(char* filename)
 {
 	const double WIDTH = 640;  // 幅
 	const double HEIGHT = 480; // 高さ
-	const int CAMERANUM = 0; // カメラ番号
+	const int CAMERANUM = 1; // カメラ番号
 	/*画像関係*/
 	CvCapture *capture = NULL;
 	IplImage *frame = 0;
@@ -390,6 +395,57 @@ void threshold(IplImage* img, IplImage* t_img, char* filename)
 	cvSaveImage(exfilename, t_img);
 }
 
+int search_TransAngle(IplImage* img ){
+	int i, j;
+
+	int max=0, min=0,result;
+	double angle=0.0;
+	double sum=0.0,ave=0.0,con=0.0,max_con=0.0;
+	CvPoint origin,point; 
+	Mat trans;
+	Mat x, ans;
+	std::ofstream fs1("kkuninn.txt");
+	origin.x = img->width / 2;
+	origin.y = img->height / 2;
+
+	for (angle= -10; angle < 11; angle++){
+		trans = TransMat(angle);
+		for (i = -10; i < 10; i++){
+			sum = 0;
+			ave = 0;
+			for (j = 0; j < img->width; j++){
+				x = (Mat_<double>(2, 1) << j-origin.x, origin.y-i);
+				ans = trans*x;
+				fs1 << ans << std::endl;
+				point.x=ans.at<int>(1, 1)+origin.x;
+				point.y = ans.at<int>(2, 1);
+				sum+=img->imageData[img->widthStep * point.y + point.x];
+			}
+			ave = sum / img->width;
+			if (ave>max){
+				max = ave;
+			}
+			else if (ave < min){
+				min = ave;
+			}
+			fs1 << "aaaaaaaaaaaaaaa" << std::endl;
+		}
+		con = abs(max - min);
+		if (max_con < con){
+			result = angle;
+		}
+		fs1 << result << std::endl;
+	}
+	return result;
+}
+
+Mat TransMat(double angle){
+	double a, b;
+	a = std::cos(angle*CV_PI / 180);
+	b = b = std::sin(angle*CV_PI / 180);
+	Mat trans = (Mat_<double>(2, 2) << a, -b, b, a);
+	return trans;
+}
 
 
 
